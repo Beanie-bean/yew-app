@@ -1,28 +1,16 @@
-use crate::components::all_games::AllGames;
 use yew_router::prelude::*;
 use yew::prelude::*;
+use crate::router::{Route, switch};
+use crate::components::navbar::Navbar;
 
-pub mod components;
-
-#[derive(Clone, Routable, PartialEq)]
-enum Route {
-    #[at("/")]
-    AllGames,
-    #[at("/mylists")]
-    MyLists
-}
-
-fn switch(routes: Route) -> Html {
-    match routes {
-        Route::AllGames => html! { <AllGames /> },
-        Route::MyLists => html! { <h1>{ "My lists" }</h1> },
-    }
-}
+mod components;
+mod router;
 
 #[component]
 fn App() -> Html {
     html! {
         <BrowserRouter>
+            <Navbar /> 
             <Switch<Route> render={switch} />
         </BrowserRouter>
     }
