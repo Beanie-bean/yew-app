@@ -15,7 +15,7 @@ impl Component for Navbar {
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
-            <nav class="navbar navbar-expand-lg bg-body-tertiary">
+            <nav class="navbar navbar-expand-sm bg-body-tertiary">
                 <div class="container-fluid">
                     <Link<Route> classes={classes!("navbar-brand")} to={Route::AllGames}>{ "Yew Games" }</Link<Route>>
                     <div class="navbar-collapse">

@@ -4,5 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-yew = { version = "0.23", features = ["csr"] }
+yew = { version = "0.23", features = ["csr", "serde"] }
 yew-router = "0.20.0"
+gloo-net = "0.6"
+serde = { version = "1.0", features = ["derive"] }
+wasm-bindgen-futures = "0.4"
+dotenv_codegen = "0.15"

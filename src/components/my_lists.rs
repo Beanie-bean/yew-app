@@ -23,6 +23,7 @@ fn MyListsList(MyListsListProps { my_lists }: &MyListsListProps) -> Html {
 
 #[component]
 pub fn MyLists() -> Html {
+
     let my_lists = vec![
         List {
             id: 1,
@@ -32,8 +33,22 @@ pub fn MyLists() -> Html {
     ];
     html! {
         <>
-            <h1>{"My Lists"}</h1>
-            <MyListsList {my_lists} />
+            <h1 class="d-flex justify-content-center">{"All Games"}</h1>
+            <div class="d-flex justify-content-center">
+                <div class="w-50">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>{"Name"}</th>
+                                <th width="15%">{"Release Year"}</th>
+                                <th width="10%"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </>
     }
 }
