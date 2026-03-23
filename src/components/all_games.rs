@@ -3,6 +3,8 @@ use yew::prelude::*;
 use serde::Deserialize;
 use dotenv_codegen::dotenv;
 use crate::components::pagination::*;
+use web_sys::{ScrollToOptions};
+use web_sys::ScrollBehavior;
 
 #[derive(Clone, PartialEq, Deserialize)]
 struct Game {
@@ -20,11 +22,14 @@ struct Results {
 pub fn AllGames() -> Html {
     let key = dotenv!("RAWGIO_API_KEY");
     let current_page = use_state(|| 1);
-    let query = use_state(||format!("https://rawg.io/api/games?key={}&page={}", key, *current_page));
 
     let on_set_page = {
         let current_page = current_page.clone();
         Callback::from(move |page: u32| {
+            let options = ScrollToOptions::new();
+            options.set_top(0.0);
+            options.set_behavior(ScrollBehavior::Smooth);
+            web_sys::window().unwrap().scroll_to_with_scroll_to_options(&options);
             current_page.set(page);
         })
     };
@@ -32,12 +37,14 @@ pub fn AllGames() -> Html {
     let results: UseStateHandle<Option<Results>> = use_state(|| None);
     let error: UseStateHandle<Option<Error>> = use_state(|| None);
 
-   {
+    {
         let results = results.clone();
         let error = error.clone();
-        use_effect_with((), move |_| {
+        let page = current_page.clone();
+        
+        use_effect_with(page.clone(), move |_| {
                 wasm_bindgen_futures::spawn_local(async move {
-                    let fetched_games = Request::get(query.as_str())
+                    let fetched_games = Request::get(format!("https://rawg.io/api/games?key={}&page={}", key, *page).as_str())
                         .send()
                         .await;
                     match fetched_games {
@@ -91,7 +98,7 @@ pub fn AllGames() -> Html {
         <>
             <h2 class="p-3 d-flex justify-content-center">{"All Games"}</h2>
             <div class="d-flex justify-content-center">
-                if true {
+                if results.as_ref() != None {
                     <div style="width: 50%">
                         <table class="table table-striped align-middle table-bordered">
                             <thead>
@@ -113,3 +120,5 @@ pub fn AllGames() -> Html {
         </>    
     }
 }
+
+

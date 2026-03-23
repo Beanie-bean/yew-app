@@ -1,4 +1,4 @@
-use yew::prelude::*;
+use yew::{prelude::*};
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct Page {
@@ -80,5 +80,4 @@ pub fn Pagination(page: &Page) -> Html {
             </ul>
         </nav>
     }
-
 }

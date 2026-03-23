@@ -10,3 +10,4 @@ gloo-net = "0.6"
 serde = { version = "1.0", features = ["derive"] }
 wasm-bindgen-futures = "0.4"
 dotenv_codegen = "0.15"
+web-sys = { version = "0.3.91", features = ["ScrollToOptions", "ScrollBehavior"]}
