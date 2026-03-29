@@ -24,7 +24,7 @@ impl Component for Navbar {
                                 <Link<Route> classes={classes!("nav-link")} to={Route::AllGames}>{ "All Games" }</Link<Route>>
                             </li>
                             <li class="nav-item">
-                                <Link<Route> classes={classes!("nav-link")}to={Route::MyLists}>{ "My Lists" }</Link<Route>>                    
+                                <Link<Route> classes={classes!("nav-link")}to={Route::MyGames}>{ "My Games" }</Link<Route>>                    
                             </li>
                         </ul>
                     </div>

@@ -1,4 +1,4 @@
 pub mod all_games;
-pub mod my_lists;
+pub mod my_games;
 pub mod navbar;
 pub mod pagination;

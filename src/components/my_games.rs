@@ -1,55 +1,41 @@
-use gloo_net::{http::Request, Error};
+use std::clone;
+
 use yew::prelude::*;
+use gloo_net::{http::Request, Error};
 use serde::Deserialize;
-use dotenv_codegen::dotenv;
-use crate::components::pagination::*;
-use web_sys::{ScrollToOptions};
-use web_sys::ScrollBehavior;
 
 #[derive(Clone, PartialEq, Deserialize)]
-struct Game {
-    id: usize,
-    name: AttrValue,
-    released: AttrValue
+pub struct Game {
+    pub game_id: String,
+    pub name: String,
+    pub year: String
 }
 
 #[derive(Clone, PartialEq, Deserialize)]
-struct Results {
-    results: Vec<Game>
+struct MyList {
+    _id: String,
+    name: String,
+    desc: String,
+    games: Vec<Game>
 }
 
 #[component]
-pub fn AllGames() -> Html {
-    let key = dotenv!("RAWGIO_API_KEY");
-    let current_page = use_state(|| 1);
-
-    let on_set_page = {
-        let current_page = current_page.clone();
-        Callback::from(move |page: u32| {
-            let options = ScrollToOptions::new();
-            options.set_top(0.0);
-            options.set_behavior(ScrollBehavior::Smooth);
-            web_sys::window().unwrap().scroll_to_with_scroll_to_options(&options);
-            current_page.set(page);
-        })
-    };
-    
-    let results: UseStateHandle<Option<Results>> = use_state(|| None);
+pub fn MyGames() -> Html {
+    let results: UseStateHandle<Option<Vec<MyList>>> = use_state(|| None);
     let error: UseStateHandle<Option<Error>> = use_state(|| None);
 
     {
         let results = results.clone();
         let error = error.clone();
-        let page = current_page.clone();
         
-        use_effect_with(page.clone(), move |_| {
+        use_effect_with((), move |_| {
                 wasm_bindgen_futures::spawn_local(async move {
-                    let fetched_games = Request::get(format!("https://rawg.io/api/games?key={}&page={}", key, *page).as_str())
+                    let fetched_list = Request::get("http://localhost:5050/mygames")
                         .send()
                         .await;
-                    match fetched_games {
+                    match fetched_list {
                         Ok(response) => {
-                            let json = response.json::<Results>().await;
+                            let json = response.json::<Vec<MyList>>().await;
                             match json {
                                 Ok(json_resp) => {
                                     results.set(Some(json_resp));
@@ -65,16 +51,17 @@ pub fn AllGames() -> Html {
         );
     }
 
-    let all_games = match results.as_ref() {
-        Some(results) => results
-            .results
+    let my_games = match results.as_ref() {
+        Some(results) => results[0]
+            .games
             .iter()
             .map(|game| {
                 html!{
-                    <tr key={game.id.clone()}>
+                    <tr key={game.game_id.clone()}>
                         <td>{game.name.clone()}</td>
-                        <td>{&game.released.clone()[..4]}</td>
-                        <td class="d-flex justify-content-center"><button class="btn btn-primary">{"Add"}</button></td>
+                        <td>{&game.year.clone()[..4]}</td>
+                        <td class="d-flex justify-content-center"><button class="btn btn-danger">{"Delete"}</button></td>
+
                     </tr>
                 }
             })
@@ -92,13 +79,20 @@ pub fn AllGames() -> Html {
             }
         }
     };
-    
 
     html! {
         <>
-            <h2 class="p-3 d-flex justify-content-center">{"All Games"}</h2>
-            <div class="d-flex justify-content-center">
-                if results.as_ref() != None {
+            <h2 class="p-3 d-flex justify-content-center">{"My Games"}</h2>
+            if results.as_ref() != None {
+                <div class="pt-2 row justify-content-end">
+                    <div class="col-4 d-flex justify-content-center">
+                        <h5 class="d-flex justify-content-center">{&(*results.as_ref().unwrap()[0].name)}</h5>
+                    </div>
+                    <div class="col-4 d-flex justify-content-end">
+                    </div>
+                </div>
+                <p class="d-flex justify-content-center">{&(*results.as_ref().unwrap()[0].desc)}</p>
+                <div class="d-flex justify-content-center">
                     <div style="width: 50%">
                         <table class="table table-striped align-middle table-bordered">
                             <thead>
@@ -109,14 +103,12 @@ pub fn AllGames() -> Html {
                                 </tr>
                             </thead>
                             <tbody>
-                                {all_games}
+                                {my_games}
                             </tbody>    
                         </table>
-                        <Pagination current={*current_page} on_click={on_set_page}/>
                     </div>
-                }
-                else {}
-            </div>
+                </div>
+            }
         </>    
     }
 }
