@@ -1,7 +1,7 @@
 mod db;
 mod models;
 mod services;
-mod endpoints;
+mod routes;
 
 use actix_cors::Cors;
 use actix_web::{ web, App, HttpServer };
@@ -37,7 +37,8 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Cors::permissive())
             .app_data(web::Data::new(state.clone()))
-            .service(endpoints::get_list)
+            .service(routes::get_list)
+            .service(routes::add_game)
     })
     .bind(("127.0.0.1", port))?
     .run()

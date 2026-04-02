@@ -5,6 +5,8 @@ use crate::components::navbar::Navbar;
 
 mod components;
 mod router;
+mod utils;
+mod models;
 
 #[component]
 fn App() -> Html {

@@ -1,21 +1,40 @@
 use gloo_net::{http::Request, Error};
 use yew::prelude::*;
-use serde::Deserialize;
 use dotenv_codegen::dotenv;
 use crate::components::pagination::*;
 use web_sys::{ScrollToOptions};
 use web_sys::ScrollBehavior;
 
-#[derive(Clone, PartialEq, Deserialize)]
-struct Game {
-    id: usize,
-    name: AttrValue,
-    released: AttrValue
-}
+use crate::utils::{get_all_games, get_my_games};
+use crate::models::{Game, GameToAdd, Results, MyList};
 
-#[derive(Clone, PartialEq, Deserialize)]
-struct Results {
-    results: Vec<Game>
+async fn add_game(game: &Game) -> Result<Game, Error> {
+    let game_to_add =  GameToAdd {
+        name: game.clone().name,
+        released: game.clone().released
+    };
+
+    let response = Request::patch("http://localhost:5050/add")
+        .json(&game_to_add)?
+        .send()
+        .await;
+
+
+    match response {
+        Ok(res) => {
+            let json = res.json::<Game>().await;
+            match json {
+                Ok(json_resp) => {
+                    let result = res.json().await;
+                    return result;
+                }
+                Err(e) => Err(Error::GlooError(e.to_string()))
+            }
+        }
+        Err(e) => Err(Error::GlooError(e.to_string()))
+
+    }
+    
 }
 
 #[component]
@@ -44,37 +63,54 @@ pub fn AllGames() -> Html {
         
         use_effect_with(page.clone(), move |_| {
                 wasm_bindgen_futures::spawn_local(async move {
-                    let fetched_games = Request::get(format!("https://rawg.io/api/games?key={}&page={}", key, *page).as_str())
-                        .send()
-                        .await;
-                    match fetched_games {
-                        Ok(response) => {
-                            let json = response.json::<Results>().await;
-                            match json {
-                                Ok(json_resp) => {
-                                    results.set(Some(json_resp));
-                                }
-                                Err(e) => error.set(Some(e))
-                            }
-                        }
-                        Err(e) => error.set(Some(e))
-                    }
+                    results.set(get_all_games(key, *page).await.ok());
+                    error.set(get_all_games(key, *page).await.err());
                 });
                 || ()
             }
         );
     }
 
+    let my_games_results: UseStateHandle<Option<MyList>> = use_state(|| None);
+    let my_games_error: UseStateHandle<Option<Error>> = use_state(|| None);
+
+    {
+        let my_games_results = my_games_results.clone();
+        let my_games_error = my_games_error.clone();
+        
+        use_effect_with((), move |_| {
+                wasm_bindgen_futures::spawn_local(async move {
+                    my_games_results.set(get_my_games().await.ok());
+                    my_games_error.set(get_my_games().await.err());
+                });
+                || ()
+            }
+        );
+    }
+
+    
+
     let all_games = match results.as_ref() {
         Some(results) => results
             .results
             .iter()
             .map(|game| {
+                let game = game.clone();
                 html!{
                     <tr key={game.id.clone()}>
                         <td>{game.name.clone()}</td>
                         <td>{&game.released.clone()[..4]}</td>
-                        <td class="d-flex justify-content-center"><button class="btn btn-primary">{"Add"}</button></td>
+                        <td class="d-flex justify-content-center">
+                            <button 
+                                onclick={Callback::from(move |_| {
+                                    let game = game.clone();
+                                    wasm_bindgen_futures::spawn_local(async move {
+                                        add_game(&game).await.ok();
+                                    })
+                                })}
+                                class="btn btn-primary">{"Add"}
+                            </button>
+                        </td>
                     </tr>
                 }
             })
