@@ -39,6 +39,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(state.clone()))
             .service(routes::get_list)
             .service(routes::add_game)
+            .service(routes::delete_game)
     })
     .bind(("127.0.0.1", port))?
     .run()

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Game {
     #[serde(default, serialize_with = "mongodb::bson::serde_helpers::serialize_object_id_as_hex_string")]
-    pub game_id: ObjectId,
+    pub _id: ObjectId,
     pub name: String,
     pub released: String
 }
@@ -16,4 +16,10 @@ pub struct MyList{
     pub name: String,
     pub desc: String,
     pub games: Vec<Game>
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GameToAdd {
+    pub name: String,
+    pub released: String
 }

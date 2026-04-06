@@ -3,7 +3,7 @@ use gloo_net::{http::Request, Error};
 use serde::Deserialize;
 
 use crate::utils::{get_my_games};
-use crate::models::{MyGame, MyList};
+use crate::models::{MyList};
 
 #[component]
 pub fn MyGames() -> Html {
@@ -30,7 +30,7 @@ pub fn MyGames() -> Html {
             .iter()
             .map(|game| {
                 html!{
-                    <tr key={game.game_id.clone()}>
+                    <tr key={game._id.clone().to_string()}>
                         <td>{game.name.clone()}</td>
                         <td>{&game.released.clone()[..4]}</td>
                         <td class="d-flex justify-content-center"><button class="btn btn-danger">{"Delete"}</button></td>
@@ -66,7 +66,7 @@ pub fn MyGames() -> Html {
                 </div>
                 <p class="d-flex justify-content-center">{&(*results.as_ref().unwrap().desc)}</p>
                 <div class="d-flex justify-content-center">
-                    <div style="width: 50%">
+                    <div style="min-width: 50%">
                         <table class="table table-striped align-middle table-bordered">
                             <thead>
                                 <tr>

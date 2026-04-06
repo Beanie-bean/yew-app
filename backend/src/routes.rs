@@ -1,6 +1,6 @@
-use actix_web::{HttpResponse, Responder, get, patch, web};
+use actix_web::{HttpResponse, Responder, get, patch, delete, web};
 
-use crate::{AppState, services::mygame, models::Game};
+use crate::{AppState, models::{Game, GameToAdd}, services::mygame};
 
 //Get all games in list
 #[get("/mygames")]
@@ -10,6 +10,7 @@ async fn get_list(db: web::Data<AppState>) -> impl Responder {
         Ok(rows) => {
             HttpResponse::Ok()
                 .json(rows)
+                
         }
         Err(e) => HttpResponse::InternalServerError().body(format!("DB error: {e}")),
     }
@@ -17,8 +18,21 @@ async fn get_list(db: web::Data<AppState>) -> impl Responder {
 
 //Add a new game to list
 #[patch("/add")]
-async fn add_game(db: web::Data<AppState>, data: web::Json<Game>) -> impl Responder {
+async fn add_game(db: web::Data<AppState>, data: web::Json<GameToAdd>) -> impl Responder {
     let result = mygame::add_one_game(&db.mygames, data).await;
+    match result {
+        Ok(result) => {
+            HttpResponse::Ok()
+                .json(result)
+        }
+        Err(e) => HttpResponse::InternalServerError().body(format!("DB error: {e}")),
+    }
+}
+
+// Delete game from list
+#[delete("/:id")]
+async fn delete_game(db: web::Data<AppState>, data: web::Json<Game>) -> impl Responder {
+    let result = mygame::delete_one_game(&db.mygames, data).await;
     match result {
         Ok(result) => {
             HttpResponse::Ok()
