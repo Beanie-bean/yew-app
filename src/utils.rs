@@ -1,7 +1,7 @@
 use gloo_net::{http::Request, Error};
 use web_sys::{console, wasm_bindgen::JsValue};
 
-use crate::models::{Game, GameToAdd, MyGame, MyList, Results};
+use crate::{models::{Game, GameToAdd, MyGame, MyList, Results, UpdateList}};
 
 pub async fn get_all_games(key: &str, page: u32) -> Result<Results, Error> {
     let fetched_games = Request::get(format!("https://rawg.io/api/games?key={}&page={}", key, page).as_str())
@@ -38,6 +38,37 @@ pub async fn get_my_games() -> Result<MyList, Error> {
             }
         }
         Err(e) => Err(e)
+    }
+}
+
+pub async fn edit_list(list: &UpdateList) -> Result<MyList, Error> {
+    // let list_to_edit =  UpdateList {
+    //     name: list.clone().name,
+    //     desc: list.clone().desc
+    // };
+
+    let response = Request::patch("http://localhost:5050/edit")
+        .json(&list)?
+        .send()
+        .await;
+    
+    match response {
+        Ok(res) => {
+            let json = res.json::<MyList>().await;
+
+            match json {
+                Ok(json_resp) => {
+                    return Ok(json_resp)   
+                }
+                Err(e) => {
+                    let js_error = JsValue::from_str(&e.to_string());
+                    console::log_1(&js_error);
+                    return Err(Error::GlooError(e.to_string()));
+                }
+            }
+        }
+        Err(e) => Err(Error::GlooError(e.to_string()))
+
     }
 }
 

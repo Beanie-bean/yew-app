@@ -1,7 +1,7 @@
 use actix_web::{HttpResponse, Responder, delete, get, patch, web::{self, Path}};
 use mongodb::bson::oid::ObjectId;
 
-use crate::{AppState, models::{Game, GameToAdd}, services::mygame};
+use crate::{AppState, models::{Game, GameToAdd, UpdateList}, services::mygame};
 
 //Get all games in list
 #[get("/mygames")]
@@ -12,6 +12,19 @@ async fn get_list(db: web::Data<AppState>) -> impl Responder {
             HttpResponse::Ok()
                 .json(rows)
                 
+        }
+        Err(e) => HttpResponse::InternalServerError().body(format!("DB error: {e}")),
+    }
+}
+
+// Edit list
+#[patch("/edit")]
+async fn edit_list(db: web::Data<AppState>, data: web::Json<UpdateList>) -> impl Responder {
+    let result = mygame::edit_list_details(&db.mygames, data).await;
+    match result {
+        Ok(result) => {
+            HttpResponse::Ok()
+                .json(result)
         }
         Err(e) => HttpResponse::InternalServerError().body(format!("DB error: {e}")),
     }

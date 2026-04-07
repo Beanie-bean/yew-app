@@ -23,3 +23,9 @@ pub struct GameToAdd {
     pub name: String,
     pub released: String
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateList {
+    pub name: String,
+    pub desc: String
+}

@@ -29,6 +29,12 @@ pub struct MyList {
     pub games: Vec<MyGame>
 }
 
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct UpdateList {
+    pub name: String,
+    pub desc: String
+}
+
 #[derive(Clone, PartialEq, Deserialize)]
 pub struct Results {
     pub next: Option<AttrValue>,

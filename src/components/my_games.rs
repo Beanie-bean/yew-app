@@ -5,14 +5,45 @@ use gloo_net::Error;
 use web_sys::ScrollToOptions;
 use web_sys::ScrollBehavior;
 
-use crate::utils::{delete_game, get_my_games};
-use crate::models::{MyGame, MyList};
-use crate::components::pagination::*;
+use crate::utils::{delete_game, get_my_games, edit_list};
+use crate::models::{MyGame, MyList, UpdateList};
+use crate::components::{pagination::*, edit_list_modal::*};
 
 #[component]
 pub fn MyGames() -> Html {
     let selected_game = use_state(|| MyGame {_id: "".to_string(), name: "".into(), released: "".into()});
     let current_page = use_state(|| 1);
+    let is_shown = use_state(|| false);
+
+    let results: UseStateHandle<Option<MyList>> = use_state(|| None);
+    let error: UseStateHandle<Option<Error>> = use_state(|| None);
+    let total_pages = use_state(|| 0);
+
+
+    let toggle_modal = {
+        let is_shown = is_shown.clone();
+        Callback::from(move |_| is_shown.set(!*is_shown))
+    };
+
+    let submit_list = {
+        let is_shown = is_shown.clone();
+        let results = results.clone();
+        Callback::from(move |list: UpdateList| {
+            let results = results.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                match edit_list(&list).await {
+                    Ok(newlist) => {
+                        results.set(Some(MyList { _id: results.as_ref().unwrap()._id.clone(), name: newlist.name, desc: newlist.desc, games: results.as_ref().unwrap().games.clone()}));
+                    },
+                    Err(e) => {
+                        let js_error = JsValue::from_str(&e.to_string());
+                        console::log_1(&js_error);
+                    },
+                }
+            });
+            is_shown.set(!*is_shown)
+        })
+    };
 
     let on_set_page = {
         let current_page = current_page.clone();
@@ -24,10 +55,6 @@ pub fn MyGames() -> Html {
             current_page.set(page);
         })
     };
-
-    let results: UseStateHandle<Option<MyList>> = use_state(|| None);
-    let error: UseStateHandle<Option<Error>> = use_state(|| None);
-    let total_pages = use_state(|| 0);
 
     {
         let results = results.clone();
@@ -120,6 +147,10 @@ pub fn MyGames() -> Html {
                         <h5 class="d-flex justify-content-center">{&(*results.as_ref().unwrap().name)}</h5>
                     </div>
                     <div class="col-4 d-flex justify-content-end">
+                        <button onclick={toggle_modal.clone()} type="button" class="btn btn-outline-primary me-3">
+                            {"Edit"}<i class="ps-1 bi bi-pencil-square"></i>
+                        </button>
+                        <EditListModal list={UpdateList { name: results.as_ref().unwrap().name.clone(), desc: results.as_ref().unwrap().desc.clone(),}} show={*is_shown} hide={toggle_modal} save={submit_list}/>
                     </div>
                 </div>
                 <p class="d-flex justify-content-center">{&(*results.as_ref().unwrap().desc)}</p>

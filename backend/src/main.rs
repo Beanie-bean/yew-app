@@ -38,6 +38,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Cors::permissive())
             .app_data(web::Data::new(state.clone()))
             .service(routes::get_list)
+            .service(routes::edit_list)
             .service(routes::add_game)
             .service(routes::delete_game)
     })
