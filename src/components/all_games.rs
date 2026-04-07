@@ -2,13 +2,13 @@ use gloo_net::Error;
 use web_sys::wasm_bindgen::JsValue;
 use yew::prelude::*;
 use dotenv_codegen::dotenv;
-use crate::components::pagination::*;
 use web_sys::ScrollToOptions;
 use web_sys::ScrollBehavior;
 use web_sys::console;
 
 use crate::utils::{get_all_games, get_my_games, add_game, delete_game};
 use crate::models::{MyGame, MyList, Results};
+use crate::components::pagination::*;
 
 
 #[component]
@@ -16,15 +16,18 @@ pub fn AllGames() -> Html {
     let key = dotenv!("RAWGIO_API_KEY");
     let current_page = use_state(|| 1);
     let selected_game = use_state(|| MyGame {_id: "".to_string(), name: "".into(), released: "".into()});
+    let is_loading = use_state(|| true);
 
     let on_set_page = {
         let current_page = current_page.clone();
+        let is_loading = is_loading.clone();
         Callback::from(move |page: u32| {
             let options = ScrollToOptions::new();
             options.set_top(0.0);
             options.set_behavior(ScrollBehavior::Smooth);
             web_sys::window().unwrap().scroll_to_with_scroll_to_options(&options);
             current_page.set(page);
+            is_loading.set(true);
         })
     };
     
@@ -35,11 +38,13 @@ pub fn AllGames() -> Html {
         let results = results.clone();
         let error = error.clone();
         let page = current_page.clone();
+        let is_loading = is_loading.clone();
         
         use_effect_with(page.clone(), move |_| {
                 wasm_bindgen_futures::spawn_local(async move {
                     results.set(get_all_games(key, *page).await.ok());
                     error.set(get_all_games(key, *page).await.err());
+                    is_loading.set(false);
                 });
                 || ()
             }
@@ -102,8 +107,6 @@ pub fn AllGames() -> Html {
                                         let mygame = mygame.clone();
                                         selected_game.set(MyGame {_id: "".to_string(), name: "".into(), released: "".into()});
 
-                                        // let js_error = JsValue::from_str(&(*selected_game).name.to_string());
-                                        // console::log_1(&js_error);
                                         wasm_bindgen_futures::spawn_local(async move {
                                             match delete_game(&mygame.unwrap()).await {
                                                 Ok(game) => {
@@ -131,7 +134,6 @@ pub fn AllGames() -> Html {
                                         let my_games_results = my_games_results.clone();
                                         let selected_game = selected_game.clone();
                                         selected_game.set(MyGame {_id: "".to_string(), name: "".into(), released: "".into()});
-
 
                                         wasm_bindgen_futures::spawn_local(async move {
                                             match add_game(&game).await {
@@ -172,10 +174,10 @@ pub fn AllGames() -> Html {
     
 
     html! {
-        <>
+        <div style="minHeight: 100vh, overflow-y: auto;">  
             <h2 class="p-3 d-flex justify-content-center">{"All Games"}</h2>
             <div class="d-flex justify-content-center">
-                if results.as_ref() != None && my_games_results.as_ref() != None {
+                if (*is_loading) == false && results.as_ref() != None && my_games_results.as_ref() != None {
                     <div style="min-width: 50%">
                         <table class="table table-striped align-middle table-bordered">
                             <thead>
@@ -189,12 +191,16 @@ pub fn AllGames() -> Html {
                                 {all_games}
                             </tbody>    
                         </table>
-                        <Pagination current={*current_page} on_click={on_set_page}/>
+                        <Pagination current={*current_page} on_click={on_set_page} check_next_page={&results.as_ref().unwrap().next}/>
                     </div>
                 }
-                else {}
+                else {
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">{"Loading..."}</span>
+                    </div>
+                }
             </div>
-        </>    
+        </div>    
     }
 }
 

@@ -1,27 +1,44 @@
 use web_sys::console;
 use web_sys::wasm_bindgen::JsValue;
 use yew::prelude::*;
-use gloo_net::{http::Request, Error};
-use serde::Deserialize;
+use gloo_net::Error;
+use web_sys::ScrollToOptions;
+use web_sys::ScrollBehavior;
 
 use crate::utils::{delete_game, get_my_games};
 use crate::models::{MyGame, MyList};
+use crate::components::pagination::*;
 
 #[component]
 pub fn MyGames() -> Html {
     let selected_game = use_state(|| MyGame {_id: "".to_string(), name: "".into(), released: "".into()});
+    let current_page = use_state(|| 1);
+
+    let on_set_page = {
+        let current_page = current_page.clone();
+        Callback::from(move |page: u32| {
+            let options = ScrollToOptions::new();
+            options.set_top(0.0);
+            options.set_behavior(ScrollBehavior::Smooth);
+            web_sys::window().unwrap().scroll_to_with_scroll_to_options(&options);
+            current_page.set(page);
+        })
+    };
 
     let results: UseStateHandle<Option<MyList>> = use_state(|| None);
     let error: UseStateHandle<Option<Error>> = use_state(|| None);
+    let total_pages = use_state(|| 0);
 
     {
         let results = results.clone();
         let error = error.clone();
+        let total_pages = total_pages.clone();
         
         use_effect_with(selected_game.clone(), move |_| {
                 wasm_bindgen_futures::spawn_local(async move {
                     results.set(get_my_games().await.ok());
                     error.set(get_my_games().await.err());
+                    total_pages.set(((results.as_ref().unwrap().games.len() as f64) / 20.0).ceil() as usize);
                 });
                 || ()
             }
@@ -29,8 +46,9 @@ pub fn MyGames() -> Html {
     }
 
     let my_games = match results.as_ref() {
+        
         Some(mylist) => mylist
-            .games
+            .games.get((((*current_page).clone() - 1) * 20) as usize..(((*current_page).clone() - 1) * 20 + 20) as usize).unwrap_or(mylist.games.chunks_exact(20).remainder())
             .iter()
             .map(|game| {
                 let game = game.clone();
@@ -97,7 +115,7 @@ pub fn MyGames() -> Html {
         <>
             <h2 class="p-3 d-flex justify-content-center">{"My Games"}</h2>
             if results.as_ref() != None {
-                <div class="pt-2 row justify-content-end">
+                <div class="row justify-content-end">
                     <div class="col-4 d-flex justify-content-center">
                         <h5 class="d-flex justify-content-center">{&(*results.as_ref().unwrap().name)}</h5>
                     </div>
@@ -120,6 +138,9 @@ pub fn MyGames() -> Html {
                                 {my_games}
                             </tbody>    
                         </table>
+                        if results.as_ref().unwrap().games.len() > 20 {
+                            <MyGamesPagination total_pages={*total_pages} current={*current_page} on_click={on_set_page}/>
+                        }
                     </div>
                 }
                 </div>

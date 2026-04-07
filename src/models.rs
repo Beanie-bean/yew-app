@@ -31,5 +31,6 @@ pub struct MyList {
 
 #[derive(Clone, PartialEq, Deserialize)]
 pub struct Results {
+    pub next: Option<AttrValue>,
     pub results: Vec<Game>
 }
