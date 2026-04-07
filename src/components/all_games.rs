@@ -1,21 +1,21 @@
-use gloo_net::{http::Request, Error};
+use gloo_net::Error;
 use web_sys::wasm_bindgen::JsValue;
 use yew::prelude::*;
 use dotenv_codegen::dotenv;
 use crate::components::pagination::*;
-use web_sys::{ScrollToOptions};
+use web_sys::ScrollToOptions;
 use web_sys::ScrollBehavior;
 use web_sys::console;
 
-use crate::utils::{get_all_games, get_my_games, add_game};
-use crate::models::{Game, MyGame, MyList, Results};
+use crate::utils::{get_all_games, get_my_games, add_game, delete_game};
+use crate::models::{MyGame, MyList, Results};
 
 
 #[component]
 pub fn AllGames() -> Html {
     let key = dotenv!("RAWGIO_API_KEY");
     let current_page = use_state(|| 1);
-    let added_game = use_state(|| MyGame {_id: "".to_string(), name: "".into(), released: "".into()});
+    let selected_game = use_state(|| MyGame {_id: "".to_string(), name: "".into(), released: "".into()});
 
     let on_set_page = {
         let current_page = current_page.clone();
@@ -53,7 +53,7 @@ pub fn AllGames() -> Html {
         let my_games_results = my_games_results.clone();
         let my_games_error = my_games_error.clone();
         
-        use_effect_with(added_game.clone(), move |_| {
+        use_effect_with(selected_game.clone(), move |_| {
                 wasm_bindgen_futures::spawn_local(async move {
                     my_games_results.set(get_my_games().await.ok());
                     my_games_error.set(get_my_games().await.err());
@@ -70,14 +70,15 @@ pub fn AllGames() -> Html {
             .map(|game| {
                 let game = game.clone();
                 let my_games_results = my_games_results.clone();
-                let added_game = added_game.clone();
+                let selected_game = selected_game.clone();
 
                 let mut my_game_status = false;
                 
-                let mygame = match my_games_results.as_ref() {
-                    Some(mygames) => mygames.games.iter().find(|e| e.name == game.name),
-                    None => None
-                };
+                let mygame = my_games_results.as_ref().and_then(|mygames| {
+                    mygames.games.iter()
+                        .find(|e| e.name == game.name && e.released == game.released)
+                        .cloned()
+                });
 
                 {
                     match mygame.as_ref() {
@@ -96,11 +97,30 @@ pub fn AllGames() -> Html {
                             if my_game_status {
                             <button 
                                 onclick={Callback::from(move |_| {
-                                    let game = game.clone();
-                                    wasm_bindgen_futures::spawn_local(async move {
-                                        add_game(&game).await.ok();
-                                    })
-                                })}
+                                        let my_games_results = my_games_results.clone();
+                                        let selected_game = selected_game.clone();
+                                        let mygame = mygame.clone();
+                                        selected_game.set(MyGame {_id: "".to_string(), name: "".into(), released: "".into()});
+
+                                        // let js_error = JsValue::from_str(&(*selected_game).name.to_string());
+                                        // console::log_1(&js_error);
+                                        wasm_bindgen_futures::spawn_local(async move {
+                                            match delete_game(&mygame.unwrap()).await {
+                                                Ok(game) => {
+                                                    selected_game.set(MyGame {_id: game._id.to_string(), name: game.name.clone(), released: game.released.clone()});
+                                                    let newlist = (*my_games_results).clone();
+                                                    if let Some(i) = newlist.clone().unwrap().games.iter().position(|e| e.name == game.name && e.released == game.released) {
+                                                        newlist.clone().unwrap().games.remove((i).clone());
+                                                    }
+                                                    my_games_results.set(newlist.clone());
+                                                },
+                                                Err(e) => {
+                                                    let js_error = JsValue::from_str(&e.to_string());
+                                                    console::log_1(&js_error);
+                                                },
+                                            }
+                                        });
+                                    })}
                                 class="btn btn-danger">{"Delete"}
                             </button>
                             }
@@ -109,14 +129,16 @@ pub fn AllGames() -> Html {
                                     onclick={Callback::from(move |_| {
                                         let game = game.clone();
                                         let my_games_results = my_games_results.clone();
-                                        let added_game = added_game.clone();
-                                        
+                                        let selected_game = selected_game.clone();
+                                        selected_game.set(MyGame {_id: "".to_string(), name: "".into(), released: "".into()});
+
+
                                         wasm_bindgen_futures::spawn_local(async move {
                                             match add_game(&game).await {
                                                 Ok(game) => {
-                                                    added_game.set({MyGame {_id: game._id.to_string(), name: game.name, released: game.released}});
+                                                    selected_game.set(MyGame {_id: game._id.to_string(), name: game.name, released: game.released});
                                                     let newlist = (*my_games_results).clone();
-                                                    newlist.clone().unwrap().games.push((*added_game).clone());
+                                                    newlist.clone().unwrap().games.push((*selected_game).clone());
                                                     my_games_results.set(newlist.clone());
                                                 },
                                                 Err(e) => {

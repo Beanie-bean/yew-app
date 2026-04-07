@@ -1,4 +1,5 @@
-use actix_web::{HttpResponse, Responder, get, patch, delete, web};
+use actix_web::{HttpResponse, Responder, delete, get, patch, web::{self, Path}};
+use mongodb::bson::oid::ObjectId;
 
 use crate::{AppState, models::{Game, GameToAdd}, services::mygame};
 
@@ -30,9 +31,10 @@ async fn add_game(db: web::Data<AppState>, data: web::Json<GameToAdd>) -> impl R
 }
 
 // Delete game from list
-#[delete("/:id")]
-async fn delete_game(db: web::Data<AppState>, data: web::Json<Game>) -> impl Responder {
-    let result = mygame::delete_one_game(&db.mygames, data).await;
+#[delete("/{id}")]
+async fn delete_game(db: web::Data<AppState>, path: web::Path<ObjectId>) -> impl Responder {
+    let id = path.into_inner();
+    let result = mygame::delete_one_game(&db.mygames, id).await;
     match result {
         Ok(result) => {
             HttpResponse::Ok()

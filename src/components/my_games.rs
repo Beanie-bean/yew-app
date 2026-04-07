@@ -1,12 +1,16 @@
+use web_sys::console;
+use web_sys::wasm_bindgen::JsValue;
 use yew::prelude::*;
 use gloo_net::{http::Request, Error};
 use serde::Deserialize;
 
-use crate::utils::{get_my_games};
-use crate::models::{MyList};
+use crate::utils::{delete_game, get_my_games};
+use crate::models::{MyGame, MyList};
 
 #[component]
 pub fn MyGames() -> Html {
+    let selected_game = use_state(|| MyGame {_id: "".to_string(), name: "".into(), released: "".into()});
+
     let results: UseStateHandle<Option<MyList>> = use_state(|| None);
     let error: UseStateHandle<Option<Error>> = use_state(|| None);
 
@@ -14,7 +18,7 @@ pub fn MyGames() -> Html {
         let results = results.clone();
         let error = error.clone();
         
-        use_effect_with((), move |_| {
+        use_effect_with(selected_game.clone(), move |_| {
                 wasm_bindgen_futures::spawn_local(async move {
                     results.set(get_my_games().await.ok());
                     error.set(get_my_games().await.err());
@@ -25,15 +29,51 @@ pub fn MyGames() -> Html {
     }
 
     let my_games = match results.as_ref() {
-        Some(results) => results
+        Some(mylist) => mylist
             .games
             .iter()
             .map(|game| {
+                let game = game.clone();
+                let results = results.clone();
+                let selected_game = selected_game.clone();
+
                 html!{
                     <tr key={game._id.clone().to_string()}>
                         <td>{game.name.clone()}</td>
                         <td>{&game.released.clone()[..4]}</td>
-                        <td class="d-flex justify-content-center"><button class="btn btn-danger">{"Delete"}</button></td>
+                        <td class="d-flex justify-content-center">
+                            <button 
+                                onclick={Callback::from(move |_| {
+                                    let game = game.clone();
+                                    let results = results.clone();
+                                    let selected_game = selected_game.clone();
+
+                                    let mygame = results.as_ref().and_then(|mygames| {
+                                        mygames.games.iter()
+                                            .find(|e| e.name == game.name && e.released == game.released)
+                                            .cloned()
+                                    });
+                                    
+                                    wasm_bindgen_futures::spawn_local(async move {
+                                        match delete_game(&mygame.unwrap()).await {
+                                            Ok(game) => {
+                                                selected_game.set({MyGame {_id: game._id.to_string(), name: game.name.clone(), released: game.released.clone()}});
+                                                let newlist = (*results).clone();
+                                                if let Some(i) = newlist.clone().unwrap().games.iter().position(|e| e.name == game.name && e.released == game.released) {
+                                                    newlist.clone().unwrap().games.remove((i).clone());
+                                                    results.set(newlist.clone());
+                                                }
+                                            },
+                                            Err(e) => {
+                                                let js_error = JsValue::from_str(&e.to_string());
+                                                console::log_1(&js_error);
+                                            },
+                                        }
+                                    });
+                                })}
+                                class="btn btn-danger">{"Delete"}
+                            </button>
+                        </td>
 
                     </tr>
                 }
@@ -66,6 +106,7 @@ pub fn MyGames() -> Html {
                 </div>
                 <p class="d-flex justify-content-center">{&(*results.as_ref().unwrap().desc)}</p>
                 <div class="d-flex justify-content-center">
+                if results.as_ref().unwrap().games.len() != 0 {
                     <div style="min-width: 50%">
                         <table class="table table-striped align-middle table-bordered">
                             <thead>
@@ -80,6 +121,7 @@ pub fn MyGames() -> Html {
                             </tbody>    
                         </table>
                     </div>
+                }
                 </div>
             }
         </>    

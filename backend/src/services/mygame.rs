@@ -33,16 +33,17 @@ pub async fn add_one_game(mygames: &Collection<MyList>, data: web::Json<GameToAd
     
 }
 
-pub async fn delete_one_game(mygames: &Collection<MyList>, data: web::Json<Game>) -> Result<mongodb::results::UpdateResult, mongodb::error::Error> {
+pub async fn delete_one_game(mygames: &Collection<MyList>, game_id: ObjectId) -> mongodb::error::Result<Option<MyList>> {
     let mut cursor = mygames
         .find(doc! {})
         .await?;
     let id = cursor.next().await.unwrap()?._id;
     
-    mygames.update_one(doc! { "_id": id}, 
-        doc! { "$pull": doc! {
+    mygames.find_one_and_update(doc! { "_id": id}, 
+        doc! { "$pull": {
                     "games": doc! {
-                        "_id": data._id,
+                        "_id": game_id,
                     }
-                }}).await
+                }}).return_document(ReturnDocument::After)
+                .await
 }
