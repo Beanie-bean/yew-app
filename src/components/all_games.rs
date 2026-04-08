@@ -7,7 +7,7 @@ use web_sys::ScrollBehavior;
 use web_sys::console;
 
 use crate::utils::{get_all_games, get_my_games, add_game, delete_game};
-use crate::models::{MyGame, MyList, Results};
+use crate::models::{MyGame, MyList, Results, GameToAdd};
 use crate::components::pagination::*;
 
 
@@ -81,7 +81,7 @@ pub fn AllGames() -> Html {
                 
                 let mygame = my_games_results.as_ref().and_then(|mygames| {
                     mygames.games.iter()
-                        .find(|e| e.name == game.name && e.released == game.released)
+                        .find(|e| e.name == game.name && e.released == game.released[..4])
                         .cloned()
                 });
 
@@ -131,12 +131,13 @@ pub fn AllGames() -> Html {
                                 <button 
                                     onclick={Callback::from(move |_| {
                                         let game = game.clone();
+                                        let game_to_add = GameToAdd { name: game.name, released: game.released };
                                         let my_games_results = my_games_results.clone();
                                         let selected_game = selected_game.clone();
                                         selected_game.set(MyGame {_id: "".to_string(), name: "".into(), released: "".into()});
 
                                         wasm_bindgen_futures::spawn_local(async move {
-                                            match add_game(&game).await {
+                                            match add_game(&game_to_add).await {
                                                 Ok(game) => {
                                                     selected_game.set(MyGame {_id: game._id.to_string(), name: game.name, released: game.released});
                                                     let newlist = (*my_games_results).clone();

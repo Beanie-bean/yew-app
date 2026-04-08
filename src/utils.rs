@@ -72,10 +72,10 @@ pub async fn edit_list(list: &UpdateList) -> Result<MyList, Error> {
     }
 }
 
-pub async fn add_game(game: &Game) -> Result<MyGame, Error> {
+pub async fn add_game(game: &GameToAdd) -> Result<MyGame, Error> {
     let game_to_add =  GameToAdd {
         name: game.clone().name,
-        released: game.clone().released
+        released: game.clone().released[..4].into()
     };
 
     let response = Request::patch("http://localhost:5050/add")

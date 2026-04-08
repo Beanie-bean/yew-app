@@ -5,28 +5,34 @@ use gloo_net::Error;
 use web_sys::ScrollToOptions;
 use web_sys::ScrollBehavior;
 
-use crate::utils::{delete_game, get_my_games, edit_list};
-use crate::models::{MyGame, MyList, UpdateList};
-use crate::components::{pagination::*, edit_list_modal::*};
+use crate::utils::{delete_game, get_my_games, edit_list, add_game};
+use crate::models::{MyGame, MyList, UpdateList, GameToAdd};
+use crate::components::{pagination::*, edit_list_modal::*, add_game_modal::*};
 
 #[component]
 pub fn MyGames() -> Html {
     let selected_game = use_state(|| MyGame {_id: "".to_string(), name: "".into(), released: "".into()});
     let current_page = use_state(|| 1);
-    let is_shown = use_state(|| false);
+    let edit_modal_shown = use_state(|| false);
+    let add_modal_shown = use_state(|| false);
 
     let results: UseStateHandle<Option<MyList>> = use_state(|| None);
     let error: UseStateHandle<Option<Error>> = use_state(|| None);
     let total_pages = use_state(|| 0);
 
 
-    let toggle_modal = {
-        let is_shown = is_shown.clone();
-        Callback::from(move |_| is_shown.set(!*is_shown))
+    let toggle_edit_list_modal = {
+        let edit_modal_shown = edit_modal_shown.clone();
+        Callback::from(move |_| edit_modal_shown.set(!*edit_modal_shown))
+    };
+
+    let toggle_add_game_modal = {
+        let add_modal_shown = add_modal_shown.clone();
+        Callback::from(move |_| add_modal_shown.set(!*add_modal_shown))
     };
 
     let submit_list = {
-        let is_shown = is_shown.clone();
+        let edit_modal_shown = edit_modal_shown.clone();
         let results = results.clone();
         Callback::from(move |list: UpdateList| {
             let results = results.clone();
@@ -41,7 +47,33 @@ pub fn MyGames() -> Html {
                     },
                 }
             });
-            is_shown.set(!*is_shown)
+            edit_modal_shown.set(!*edit_modal_shown)
+        })
+    };
+
+    let submit_game = {
+        let add_modal_shown = add_modal_shown.clone();
+        let results = results.clone();
+        let selected_game = selected_game.clone();
+
+        Callback::from(move |game_to_add: GameToAdd| {
+            let results = results.clone();
+            let selected_game = selected_game.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                match add_game(&game_to_add).await {
+                    Ok(game) => {
+                        selected_game.set(MyGame {_id: game._id.to_string(), name: game.name, released: game.released});
+                        let newlist = (*results).clone();
+                        newlist.clone().unwrap().games.push((*selected_game).clone());
+                        results.set(newlist.clone());
+                    },
+                    Err(e) => {
+                        let js_error = JsValue::from_str(&e.to_string());
+                        console::log_1(&js_error);
+                    },
+                }
+            });
+            add_modal_shown.set(!*add_modal_shown)
         })
     };
 
@@ -147,13 +179,19 @@ pub fn MyGames() -> Html {
                         <h5 class="d-flex justify-content-center">{&(*results.as_ref().unwrap().name)}</h5>
                     </div>
                     <div class="col-4 d-flex justify-content-end">
-                        <button onclick={toggle_modal.clone()} type="button" class="btn btn-outline-primary me-3">
+                        <button onclick={toggle_edit_list_modal.clone()} type="button" class="btn btn-outline-primary me-3">
                             {"Edit"}<i class="ps-1 bi bi-pencil-square"></i>
                         </button>
-                        <EditListModal list={UpdateList { name: results.as_ref().unwrap().name.clone(), desc: results.as_ref().unwrap().desc.clone(),}} show={*is_shown} hide={toggle_modal} save={submit_list}/>
+                        <EditListModal list={UpdateList { name: results.as_ref().unwrap().name.clone(), desc: results.as_ref().unwrap().desc.clone(),}} show={*edit_modal_shown} hide={toggle_edit_list_modal.clone()} save={submit_list}/>
                     </div>
                 </div>
                 <p class="d-flex justify-content-center">{&(*results.as_ref().unwrap().desc)}</p>
+                <div class="d-flex justify-content-center mb-3">
+                    <button onclick={toggle_add_game_modal.clone()} type="button" class="btn btn-primary">
+                        {"Add Game"}
+                    </button>
+                </div>
+                <AddGameModal show={*add_modal_shown} hide={toggle_add_game_modal.clone()} save={submit_game}/>
                 <div class="d-flex justify-content-center">
                 if results.as_ref().unwrap().games.len() != 0 {
                     <div style="min-width: 50%">
