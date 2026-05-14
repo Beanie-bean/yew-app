@@ -162,7 +162,7 @@ html! {
                             onclick={{
                                 let set_page = set_page.clone();
                                 Callback::from(move |_| {
-                                    set_page.emit(current_page.clone() + 1)
+                                    set_page.emit(if current_page.clone() + 1 > total_pages.clone() as u32 {current_page.clone()} else {current_page.clone() + 1})
                                 })
                             }} disabled={total_pages == current_page as usize} class="btn" style={format!("border-color: #dee2e6; border-radius: 0px 10px 10px 0px; border-left: 0px; background-color: {}; color: {}", if total_pages == current_page as usize {"#e9ecef"} else {"#ffffff"}, if total_pages == current_page as usize {"#495057"} else {"#0d6efd"})}>{"Next"}
                         </button>

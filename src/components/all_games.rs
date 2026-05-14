@@ -1,4 +1,5 @@
 use gloo_net::Error;
+use web_sys::HtmlInputElement;
 use web_sys::wasm_bindgen::JsValue;
 use yew::prelude::*;
 use dotenv_codegen::dotenv;
@@ -6,10 +7,9 @@ use web_sys::ScrollToOptions;
 use web_sys::ScrollBehavior;
 use web_sys::console;
 
-use crate::utils::{get_all_games, get_my_games, add_game, delete_game};
+use crate::utils::{get_all_games, get_games_by_text, get_my_games, add_game, delete_game};
 use crate::models::{MyGame, MyList, Results, GameToAdd};
 use crate::components::pagination::*;
-
 
 #[component]
 pub fn AllGames() -> Html {
@@ -17,6 +17,8 @@ pub fn AllGames() -> Html {
     let current_page = use_state(|| 1);
     let selected_game = use_state(|| MyGame {_id: "".to_string(), name: "".into(), released: "".into()});
     let is_loading = use_state(|| true);
+    let search_word= use_state(|| String::new());
+    let input_node = use_node_ref();
 
     let on_set_page = {
         let current_page = current_page.clone();
@@ -31,20 +33,54 @@ pub fn AllGames() -> Html {
         })
     };
     
+    let on_search_submit = {
+        let input_node = input_node.clone();
+        let search_word = search_word.clone();
+        let is_loading = is_loading.clone();
+        Callback::from(move |_| {
+            if let Some(input) = input_node.cast::<HtmlInputElement>() {
+                search_word.set(input.value());
+                is_loading.set(true);
+            }
+        }) 
+    };
+
+    let on_search_clear = {
+        let input_node = input_node.clone();
+        let search_word = search_word.clone();
+        let is_loading = is_loading.clone();
+        Callback::from(move |_: MouseEvent| {
+            if let Some(input) = input_node.cast::<HtmlInputElement>() {
+                input.set_value("");
+                search_word.set(String::new());
+                is_loading.set(true);
+            }
+        })
+    };
+
     let results: UseStateHandle<Option<Results>> = use_state(|| None);
     let error: UseStateHandle<Option<Error>> = use_state(|| None);
+
 
     {
         let results = results.clone();
         let error = error.clone();
         let page = current_page.clone();
         let is_loading = is_loading.clone();
+        let search_word = search_word.clone();
         
-        use_effect_with(page.clone(), move |_| {
+        use_effect_with((page.clone(), search_word.clone()), move |_| {
                 wasm_bindgen_futures::spawn_local(async move {
-                    results.set(get_all_games(key, *page).await.ok());
-                    error.set(get_all_games(key, *page).await.err());
-                    is_loading.set(false);
+                    if search_word.clone().is_empty() {
+                        results.set(get_all_games(key, *page).await.ok());
+                        error.set(get_all_games(key, *page).await.err());
+                        is_loading.set(false);
+                    }
+                    else {
+                        results.set(get_games_by_text(key, *page, (*search_word).clone()).await.ok());
+                        error.set(get_games_by_text(key, *page, (*search_word).clone()).await.err());
+                        is_loading.set(false);
+                    }
                 });
                 || ()
             }
@@ -131,7 +167,7 @@ pub fn AllGames() -> Html {
                                 <button 
                                     onclick={Callback::from(move |_| {
                                         let game = game.clone();
-                                        let game_to_add = GameToAdd { name: game.name, released: game.released };
+                                        let game_to_add = GameToAdd { name: game.name, released: game.released[..4].into() };
                                         let my_games_results = my_games_results.clone();
                                         let selected_game = selected_game.clone();
                                         selected_game.set(MyGame {_id: "".to_string(), name: "".into(), released: "".into()});
@@ -180,6 +216,11 @@ pub fn AllGames() -> Html {
             <div class="d-flex justify-content-center">
                 if (*is_loading) == false && results.as_ref() != None && my_games_results.as_ref() != None {
                     <div style="min-width: 50%">
+                        <div class="input-group mb-3">
+                            <input ref={input_node} value={(*search_word).clone()} type="text" class="form-control" />
+                            <button onclick={on_search_clear} class="input-group-text"><i class="bi bi-x-lg"></i></button>
+                            <button onclick={on_search_submit} class="input-group-text">{"Search"}</button>
+                        </div>
                         <table class="table table-striped align-middle table-bordered">
                             <thead>
                                 <tr>

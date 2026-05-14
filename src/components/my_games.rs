@@ -117,13 +117,14 @@ pub fn MyGames() -> Html {
                 html!{
                     <tr key={game._id.clone().to_string()}>
                         <td>{game.name.clone()}</td>
-                        <td>{&game.released.clone()[..4]}</td>
+                        <td>{&game.released.clone()}</td>
                         <td class="d-flex justify-content-center">
                             <button 
                                 onclick={Callback::from(move |_| {
                                     let game = game.clone();
                                     let results = results.clone();
                                     let selected_game = selected_game.clone();
+                                    selected_game.set(MyGame {_id: "".to_string(), name: "".into(), released: "".into()});
 
                                     let mygame = results.as_ref().and_then(|mygames| {
                                         mygames.games.iter()
@@ -171,27 +172,33 @@ pub fn MyGames() -> Html {
     };
 
     html! {
-        <>
-            <h2 class="p-3 d-flex justify-content-center">{"My Games"}</h2>
-            if results.as_ref() != None {
-                <div class="row justify-content-end">
-                    <div class="col-4 d-flex justify-content-center">
-                        <h5 class="d-flex justify-content-center">{&(*results.as_ref().unwrap().name)}</h5>
-                    </div>
-                    <div class="col-4 d-flex justify-content-end">
-                        <button onclick={toggle_edit_list_modal.clone()} type="button" class="btn btn-outline-primary me-3">
-                            {"Edit"}<i class="ps-1 bi bi-pencil-square"></i>
-                        </button>
-                        <EditListModal list={UpdateList { name: results.as_ref().unwrap().name.clone(), desc: results.as_ref().unwrap().desc.clone(),}} show={*edit_modal_shown} hide={toggle_edit_list_modal.clone()} save={submit_list}/>
-                    </div>
-                </div>
-                <p class="d-flex justify-content-center">{&(*results.as_ref().unwrap().desc)}</p>
-                <div class="d-flex justify-content-center mb-3">
+        <>  
+            <div class="row p-3 pb-2 g-0">
+                <div class="col-4 text-start">
                     <button onclick={toggle_add_game_modal.clone()} type="button" class="btn btn-primary">
                         {"Add Game"}
                     </button>
+                    if results.as_ref() != None {
+                        <AddGameModal show={*add_modal_shown} hide={toggle_add_game_modal.clone()} save={submit_game}/>
+                    }
                 </div>
-                <AddGameModal show={*add_modal_shown} hide={toggle_add_game_modal.clone()} save={submit_game}/>
+                <div class="col-4 text-center">
+                    <div>
+                        <h2>{"My Games"}</h2>
+                    </div>
+                </div>
+                <div class="col-4 text-end">
+                    <button onclick={toggle_edit_list_modal.clone()} type="button" class="btn btn-outline-primary">
+                        {"Edit"}<i class="ps-1 bi bi-pencil-square"></i>
+                    </button>
+                    if results.as_ref() != None {
+                        <EditListModal list={UpdateList { name: results.as_ref().unwrap().name.clone(), desc: results.as_ref().unwrap().desc.clone(),}} show={*edit_modal_shown} hide={toggle_edit_list_modal.clone()} save={submit_list}/>
+                    }
+                </div>
+            </div>
+            if results.as_ref() != None {
+                <h4 class="d-flex justify-content-center">{&(*results.as_ref().unwrap().name)}</h4>
+                <p class="d-flex justify-content-center">{&(*results.as_ref().unwrap().desc)}</p>
                 <div class="d-flex justify-content-center">
                 if results.as_ref().unwrap().games.len() != 0 {
                     <div style="min-width: 50%">

@@ -1,10 +1,29 @@
 use gloo_net::{http::Request, Error};
 use web_sys::{console, wasm_bindgen::JsValue};
 
-use crate::{models::{Game, GameToAdd, MyGame, MyList, Results, UpdateList}};
+use crate::{models::{GameToAdd, MyGame, MyList, Results, UpdateList}};
 
 pub async fn get_all_games(key: &str, page: u32) -> Result<Results, Error> {
-    let fetched_games = Request::get(format!("https://rawg.io/api/games?key={}&page={}", key, page).as_str())
+    let fetched_games = Request::get(format!("https://rawg.io/api/games?key={}&page={}&page_size=40", key, page).as_str())
+        .send()
+        .await;
+
+    match fetched_games {
+        Ok(response) => {
+            let json = response.json::<Results>().await;
+            match json {
+                Ok(json_resp) => {
+                    return Ok(json_resp);
+                }
+                Err(e) => Err(e)
+            }
+        }
+        Err(e) => Err(e)
+    }
+}
+
+pub async fn get_games_by_text(key: &str, page: u32, text: String) -> Result<Results, Error> {
+    let fetched_games = Request::get(format!("https://rawg.io/api/games?key={}&page={}&page_size=40&search={}", key, page, text).as_str())
         .send()
         .await;
 
@@ -42,11 +61,6 @@ pub async fn get_my_games() -> Result<MyList, Error> {
 }
 
 pub async fn edit_list(list: &UpdateList) -> Result<MyList, Error> {
-    // let list_to_edit =  UpdateList {
-    //     name: list.clone().name,
-    //     desc: list.clone().desc
-    // };
-
     let response = Request::patch("http://localhost:5050/edit")
         .json(&list)?
         .send()
@@ -75,7 +89,7 @@ pub async fn edit_list(list: &UpdateList) -> Result<MyList, Error> {
 pub async fn add_game(game: &GameToAdd) -> Result<MyGame, Error> {
     let game_to_add =  GameToAdd {
         name: game.clone().name,
-        released: game.clone().released[..4].into()
+        released: game.clone().released
     };
 
     let response = Request::patch("http://localhost:5050/add")

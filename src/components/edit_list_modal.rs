@@ -1,7 +1,7 @@
 use web_sys::HtmlInputElement;
 use yew::{prelude::*};
 
-use crate::{models::{UpdateList}, utils::edit_list};
+use crate::models::{UpdateList};
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct ModalProps {
@@ -62,7 +62,7 @@ pub fn EditListModal(props: &ModalProps) -> Html {
         <>
             <div class={classes!(
                 if show {"modal fade show"} else {"modal fade"}
-            )} style={format!("display: {}", if show {"block"} else {"none"})} tabindex="-1">
+            )} style={format!("display: {}", if show {"block"} else {"none"})}>
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -71,9 +71,9 @@ pub fn EditListModal(props: &ModalProps) -> Html {
                         </div>
                         <div class="modal-body">
                             <div class="mb-3">
-                                <label class="form-label mt-1">{"Name"}</label>
+                                <label class="form-label mt-1 d-flex justify-content-start">{"Name"}</label>
                                 <input oninput={on_name_change} value={(*list_state).clone().name} class="form-control" />
-                                <label class="form-label mt-1">{"Description"}</label>
+                                <label class="form-label mt-1 d-flex justify-content-start">{"Description"}</label>
                                 <input oninput={on_desc_change} value={(*list_state).clone().desc} class="form-control" />
                             </div>
                         </div>

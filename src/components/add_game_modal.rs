@@ -10,21 +10,6 @@ pub struct ModalProps {
     pub hide: Callback<MouseEvent>,
     pub save: Callback<GameToAdd>
 }
-// #[hook]
-// pub fn use_modal(props: &ModalProps) -> (bool, Callback<MouseEvent>, Callback<GameToAdd>) {
-//     let ModalProps { show, hide, save } = props.clone();
-//     let mygame = use_state(|| game);
-    
-//     let set_game = {
-//         let mygame = mygame.clone();
-//         Callback::from(move |game_to_add: GameToAdd| {
-//             mygame.set(game_to_add.clone());
-//             save.emit(game_to_add);
-        
-//         })
-//     };
-//     (show, hide, set_game)
-// }
 
 #[component]
 pub fn AddGameModal(props: &ModalProps) -> Html { 
@@ -34,8 +19,9 @@ pub fn AddGameModal(props: &ModalProps) -> Html {
          let mygame = game_state.clone();
          let props = props.clone();
          Callback::from(move |game_to_add: GameToAdd| {
-             mygame.set(game_to_add.clone());
-             props.save.emit(game_to_add);
+            mygame.set(game_to_add.clone());
+            props.save.emit(game_to_add);
+            mygame.set(GameToAdd { name: "".into(), released: "".into() });
          })
      };
 
@@ -48,6 +34,15 @@ pub fn AddGameModal(props: &ModalProps) -> Html {
             game_state.set(new_game);
         }) 
     };
+
+    let close = {
+         let mygame = game_state.clone();
+         let props = props.clone();
+         Callback::from(move |e: MouseEvent| {
+             mygame.set(GameToAdd { name: "".into(), released: "".into() });
+             props.hide.emit(e);
+         })
+     };
 
     let on_released_change = {
         let game_state = game_state.clone();
@@ -63,12 +58,19 @@ pub fn AddGameModal(props: &ModalProps) -> Html {
         <>
             <div class={classes!(
                 if props.show {"modal fade show"} else {"modal fade"}
-            )} style={format!("display: {}", if props.show {"block"} else {"none"})} tabindex="-1">
+            )} style={format!("display: {}", if props.show {"block"} else {"none"})}>
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h1 class="modal-title fs-5">{"Add Game"}</h1>
-                            <button type="button" class="btn-close" onclick={props.hide.clone()}></button>
+                            <button type="button" 
+                                onclick={{
+                                    let close = close.clone();
+                                    Callback::from(move |e: MouseEvent| {
+                                        close.emit(e.clone());
+                                    })
+                                }}
+                                class="btn-close"></button>
                         </div>
                         <div class="modal-body">
                             <div class="mb-3">
@@ -79,13 +81,19 @@ pub fn AddGameModal(props: &ModalProps) -> Html {
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" onclick={props.hide.clone()}>{"Close"}</button>
+                            <button type="button" 
+                                onclick={{
+                                    let close = close.clone();
+                                    Callback::from(move |e: MouseEvent| {
+                                        close.emit(e.clone());
+                                    })
+                                }}
+                                class="btn btn-secondary">{"Close"}</button>
                             <button type="button" 
                                 onclick={{
                                     let set_game = set_game.clone();
                                     Callback::from(move |_| {
                                         set_game.emit((*game_state).clone());
-                                        game_state.set(GameToAdd { name: "".into(), released: "".into() });
                                     })
                                 }}
                             class="btn btn-primary">{"Save Game"}</button>
