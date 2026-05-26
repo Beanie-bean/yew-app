@@ -213,38 +213,40 @@ pub fn AllGames() -> Html {
     
 
     html! {
-        <div style="minHeight: 100vh, overflow-y: auto;">  
-            <h2 class="p-3 d-flex justify-content-center">{"All Games"}</h2>
-            <div class="d-flex justify-content-center">
-                if (*is_loading) == false && results.as_ref() != None && my_games_results.as_ref() != None {
-                    <div style="min-width: 50%">
-                        <div class="input-group mb-3">
-                            <input ref={input_node} value={(*search_word).clone()} type="text" class="form-control" />
-                            <button onclick={on_search_clear} class="input-group-text"><i class="bi bi-x-lg"></i></button>
-                            <button onclick={on_search_submit} class="input-group-text">{"Search"}</button>
+        <main>
+            <div style="minHeight: 100vh, overflow-y: auto;">  
+                <h2 class="p-3 d-flex justify-content-center">{"All Games"}</h2>
+                <div class="d-flex justify-content-center">
+                    if (*is_loading) == false && results.as_ref() != None && my_games_results.as_ref() != None {
+                        <div style="min-width: 50%">
+                            <div class="input-group mb-3">
+                                <input type="text" class="form-control" aria-label="Search field" ref={input_node} value={(*search_word).clone()} />
+                                <button onclick={on_search_clear} class="input-group-text" aria-label="Clear search"><i class="bi bi-x-lg"></i></button>
+                                <button onclick={on_search_submit} class="input-group-text" aria-label="Submit search">{"Search"}</button>
+                            </div>
+                            <table class="table table-striped align-middle table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>{"Name"}</th>
+                                        <th width="20%">{"Release Year"}</th>
+                                        <th width="14%"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {all_games}
+                                </tbody>    
+                            </table>
+                            <Pagination current={*current_page} on_click={on_set_page} check_next_page={&results.as_ref().unwrap().next}/>
                         </div>
-                        <table class="table table-striped align-middle table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>{"Name"}</th>
-                                    <th width="25%">{"Release Year"}</th>
-                                    <th width="14%"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {all_games}
-                            </tbody>    
-                        </table>
-                        <Pagination current={*current_page} on_click={on_set_page} check_next_page={&results.as_ref().unwrap().next}/>
-                    </div>
-                }
-                else {
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">{"Loading..."}</span>
-                    </div>
-                }
-            </div>
-        </div>    
+                    }
+                    else {
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">{"Loading..."}</span>
+                        </div>
+                    }
+                </div>
+            </div>    
+        </main>
     }
 }
 

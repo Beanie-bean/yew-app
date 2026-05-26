@@ -172,7 +172,7 @@ pub fn MyGames() -> Html {
     };
 
     html! {
-        <>  
+        <main>  
             <div class="row p-3 pb-2 g-0">
                 <div class="col-4 text-start">
                     <button onclick={toggle_add_game_modal.clone()} type="button" class="btn btn-primary">
@@ -197,7 +197,7 @@ pub fn MyGames() -> Html {
                 </div>
             </div>
             if results.as_ref() != None {
-                <h4 class="d-flex justify-content-center">{&(*results.as_ref().unwrap().name)}</h4>
+                <p class="h4 d-flex justify-content-center">{&(*results.as_ref().unwrap().name)}</p>
                 <p class="d-flex justify-content-center">{&(*results.as_ref().unwrap().desc)}</p>
                 <div class="d-flex justify-content-center">
                 if results.as_ref().unwrap().games.len() != 0 {
@@ -206,7 +206,7 @@ pub fn MyGames() -> Html {
                             <thead>
                                 <tr>
                                     <th>{"Name"}</th>
-                                    <th width="25%">{"Release Year"}</th>
+                                    <th width="20%">{"Release Year"}</th>
                                     <th width="14%"></th>
                                 </tr>
                             </thead>
@@ -221,7 +221,7 @@ pub fn MyGames() -> Html {
                 }
                 </div>
             }
-        </>    
+        </main>    
     }
 }
 
