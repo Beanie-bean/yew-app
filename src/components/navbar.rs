@@ -21,7 +21,7 @@ impl Component for Navbar {
                     <div class="navbar-collapse">
                         <ul class="navbar-nav">
                             <li class="nav-item">
-                                <Link<Route> classes={classes!("nav-link")} to={Route::AllGames}>{ "All Games" }</Link<Route>>
+                                <Link<Route> classes={classes!("nav-link")} to={Route::AllGames}>{ "Games" }</Link<Route>>
                             </li>
                             <li class="nav-item">
                                 <Link<Route> classes={classes!("nav-link")}to={Route::MyGames}>{ "My Games" }</Link<Route>>                    

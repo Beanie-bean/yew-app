@@ -37,9 +37,11 @@ pub fn AllGames() -> Html {
         let input_node = input_node.clone();
         let search_word = search_word.clone();
         let is_loading = is_loading.clone();
+        let current_page = current_page.clone();
         Callback::from(move |_| {
             if let Some(input) = input_node.cast::<HtmlInputElement>() {
                 search_word.set(input.value());
+                current_page.set(1);
                 is_loading.set(true);
             }
         }) 
